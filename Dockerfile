@@ -2,14 +2,13 @@
 FROM node:latest
 
 #setting current directory in container as working directory
-WORKDIR .
+WORKDIR boingoChatBotAPI
 
 #copy package.json to working directory
 COPY package.json .
 
 #copy src to working directory
-COPY src/ .
-
+COPY src/ boingoChatBotAPI/src/
 
 #setting the npm registry
 RUN npm config set registry http://registry.npmjs.org/
