@@ -1,6 +1,5 @@
 # bingoChatBotAPI
-
-Running on docker
+* Running on docker
   - Build
     docker build -t api.
   - Run
