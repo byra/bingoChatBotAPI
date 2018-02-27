@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.2",
-    "node-uuid": "^1.4.8"
+    "mysql": "^2.15.0"
   },
   "devDependencies": {
     "nodemon": "^1.14.12"
