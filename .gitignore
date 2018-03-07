@@ -60,3 +60,4 @@ typings/
 # others
 package-lock.json
 .idea/
+nohup.out
