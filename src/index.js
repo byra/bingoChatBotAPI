@@ -1,5 +1,8 @@
 var express = require('express');
 var mysql = require('mysql');
+var fs = require('fs');
+var shell = require('shelljs');
+
 var connection = mysql.createConnection({
     host     : '54.213.230.201',
     socketPath: '/var/run/mysqld/mysqld.sock',
@@ -19,7 +22,7 @@ app.use(function (req,res, next) {
 
 app.listen(3030);
 
-app.get('/login', function(req,res, next){
+app.get('/boingoAPI/login', function(req,res, next){
 
     var email = req.query.email;
     var password = req.query.password;
@@ -40,7 +43,75 @@ app.get('/login', function(req,res, next){
     });
 });
 
-app.get('/hello', function(req, res, next){
-    console.log("yo yo");
-   return res.json({a:1});
+app.get('/boingoAPI/botUpdate', function(req, res, next){
+    var counter = 0;
+
+    //Updating stories.md file
+    const storesFile = "../boingoChatBotCore/data/stories.md";
+    var storiesContent = fs.readFileSync(storesFile);
+    var deployData = JSON.parse(req.query.deployData);
+    for(var g in Object.keys(deployData)){
+        storiesContent += "\n\n## "+ Object.keys(deployData)[g] + "\n* " + Object.keys(deployData)[g];
+        for(var h in deployData[Object.keys(deployData)[g]]){
+            storiesContent+= "\n  - " + deployData[Object.keys(deployData)[g]][h].followupIntentChange;
+        }
+    }
+    console.log(storiesContent);
+    //fs.writeFile(storesFile,storiesContent, function(){counter+=1;});
+
+    //Updating nlu_train.json file
+    const nluTrain= "../rasa-nlu-trainer/src/state/testData.json";
+    var contents = fs.readFileSync(nluTrain);
+    var newTrainData = JSON.parse(contents);
+    const botNLUTrain= "../boingoChatBotCore/data/nlu_train.json";
+    var botContents = fs.readFileSync(botNLUTrain);
+    var botTrainData = JSON.parse(botContents);
+    botTrainData.rasa_nlu_data.common_examples.push(newTrainData.rasa_nlu_data.common_examples);
+    var newTrainDataToBeWritten = JSON.stringify(botTrainData);
+    //fs.writeFile(botNLUTrain,newTrainDataToBeWritten, function(){counter+=1;});
+
+    //Extraction of entities in new intends
+    var intents = [];
+    var intentsWithEntities = {};
+    for (var i in newTrainData.rasa_nlu_data.common_examples){
+        if(!intents.includes(newTrainData.rasa_nlu_data.common_examples[i].intent)){
+            intents.push(newTrainData.rasa_nlu_data.common_examples[i].intent);
+            var entities=[];
+            for( var j in newTrainData.rasa_nlu_data.common_examples[i].entities){
+                var temp = {};
+                temp[newTrainData.rasa_nlu_data.common_examples[i].entities[j].entity]= "text";
+                entities.push(temp);
+            }
+            intentsWithEntities[newTrainData.rasa_nlu_data.common_examples[i].intent] = entities
+        }
+
+    }
+
+    //Updating domain.yml file
+    const botDomain= "../boingoChatBotCore/domain.yml";
+    var botDomianContents = fs.readFileSync(botDomain);
+    var domainContentsString = botDomianContents.toString();
+    var domainContents = domainContentsString.split("\n\n");
+    var intentsArray = domainContents[1].split("\n");
+    for( var k =1; k < intentsArray.length; k++){
+        intentsArray[k] = intentsArray[k].slice(4);
+    }
+    for(var l in intents){
+        if(!intentsArray.includes(intents[l])){
+            domainContents[1] += "\n  - "+intents[l];
+            for(var m in intentsWithEntities[intents[l]]){
+                domainContents[2] += "\n  - "+Object.keys(intentsWithEntities[intents[l]][m]);
+                domainContents[0] += "\n  "+Object.keys(intentsWithEntities[intents[l]][m]) + ":\n    type: "+intentsWithEntities[intents[l]][m][Object.keys(intentsWithEntities[intents[l]][m])];
+            }
+        }
+    }
+    var updatedDomain = domainContents[0] + "\n\n" + domainContents[1] + "\n\n" + domainContents[2];
+    //fs.writeFile(botDomain,updatedDomain, function(){counter+=1;});
+    //var code = shell.exec("nohup ./test &> /dev/null &",{async:true}).code;
+    if(true){
+        return res.json({success:true});
+    }
+    else {
+        return res.json({success:false});
+    }
 });
