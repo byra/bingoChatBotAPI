@@ -56,8 +56,7 @@ app.get('/boingoAPI/botUpdate', function(req, res, next){
             storiesContent+= "\n  - " + deployData[Object.keys(deployData)[g]][h].followupIntentChange;
         }
     }
-    console.log(storiesContent);
-    //fs.writeFile(storesFile,storiesContent, function(){counter+=1;});
+    fs.writeFile(storesFile,storiesContent, function(){counter+=1;});
 
     //Updating nlu_train.json file
     const nluTrain= "../rasa-nlu-trainer/src/state/testData.json";
@@ -68,7 +67,7 @@ app.get('/boingoAPI/botUpdate', function(req, res, next){
     var botTrainData = JSON.parse(botContents);
     botTrainData.rasa_nlu_data.common_examples.push(newTrainData.rasa_nlu_data.common_examples);
     var newTrainDataToBeWritten = JSON.stringify(botTrainData);
-    //fs.writeFile(botNLUTrain,newTrainDataToBeWritten, function(){counter+=1;});
+    fs.writeFile(botNLUTrain,newTrainDataToBeWritten, function(){counter+=1;});
 
     //Extraction of entities in new intends
     var intents = [];
@@ -106,12 +105,15 @@ app.get('/boingoAPI/botUpdate', function(req, res, next){
         }
     }
     var updatedDomain = domainContents[0] + "\n\n" + domainContents[1] + "\n\n" + domainContents[2];
-    //fs.writeFile(botDomain,updatedDomain, function(){counter+=1;});
-    //var code = shell.exec("nohup ./test &> /dev/null &",{async:true}).code;
-    if(true){
-        return res.json({success:true});
-    }
-    else {
-        return res.json({success:false});
+    fs.writeFile(botDomain,updatedDomain, function(){counter+=1;});
+
+    if(newTrainData.rasa_nlu_data.common_examples && deployData){
+        shell.exec("nohup ./test &> /dev/null &",{async:true, silent:true});
+        if(counter===3){
+            return res.json({success:true});
+        }
+        else {
+            return res.json({success:false});
+        }
     }
 });
